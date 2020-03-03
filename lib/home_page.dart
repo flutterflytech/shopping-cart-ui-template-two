@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shopping_ui/bloc_controller.dart';
 import 'package:shopping_ui/cart_page.dart';
 import 'package:shopping_ui/category_list.dart';
 import 'package:shopping_ui/featured_card.dart';
 import 'package:shopping_ui/featured_page.dart';
-import 'package:shopping_ui/future_api.dart';
 
 import 'data_json.dart';
 
@@ -13,11 +13,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Repository repo = Repository();
+  //Repository repo = Repository();
+  ControllerBloc bloc = ControllerBloc();
 
-  List<Data> data_list = [];
+  List data_list = [];
 
   List<Data> cart_data = [];
+
 
   Data receivedFromFeaturedCard;
   Data deletedFromCart;
@@ -27,13 +29,17 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    getUserData();
+    bloc.getData();
+    bloc.addCartItem(cart_data);
   }
 
-  getUserData() async {
-    data_list = await repo.fetchData();
-    setState(() {});
+  @override
+  void dispose() {
+    super.dispose();
+    bloc.dispose();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +50,7 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             Container(
-              height: 115,
+              height: 150,
               child: DrawerHeader(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 10),
@@ -134,23 +140,28 @@ class _HomePageState extends State<HomePage> {
                     ),
                     Stack(
                       children: <Widget>[
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => CartPage(
-                                        cartData: cart_data,
-                                        onRemoveFromCart: (Data deletedData) {
-                                          deletedFromCart = deletedData;
-                                          cart_data.remove(deletedFromCart);
-                                        })));
-                          },
-                          icon: Icon(
-                            Icons.shopping_cart,
-                            size: 30,
-                            color: Colors.black54,
-                          ),
+                        StreamBuilder<Object>(
+                            stream: bloc.cartItemControl,
+                          builder: (context, snapshot) {
+                            return IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => CartPage(
+                                            cartData: cart_data,
+                                            onRemoveFromCart: (List<Data> updatedData) {
+                                              cart_data = updatedData;
+                                              bloc.removeCartItem(cart_data);
+                                            })));
+                              },
+                              icon: Icon(
+                                Icons.shopping_cart,
+                                size: 30,
+                                color: Colors.black54,
+                              ),
+                            );
+                          }
                         ),
                         Container(child: cartNotifier())
                       ],
@@ -164,204 +175,227 @@ class _HomePageState extends State<HomePage> {
               Expanded(
                 child: Container(
                   child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        SizedBox(
-                          height: 10,
-                        ),
-                        Container(
-                          height: 80,
-                          width: deviceInfo.width * 0.9,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Card(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
-                              elevation: 10,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.search,
-                                      size: 30,
-                                      color: Colors.black54,
-                                    ),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    Center(
-                                      child: Container(
-                                        height: 80,
-                                        width: deviceInfo.width * 0.7,
-                                        child: TextFormField(
-                                          decoration: InputDecoration(
-                                              border: InputBorder.none,
-                                              hintText: 'Search somthing'),
+                    child: StreamBuilder<Object>(
+                        stream: bloc.dataList,
+                      builder: (context, snapshot) {
+                          if(snapshot.hasData) {
+                            data_list = snapshot.data;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: <Widget>[
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Container(
+                                  height: 80,
+                                  width: deviceInfo.width * 0.9,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Card(
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              10)),
+                                      elevation: 10,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                          children: <Widget>[
+                                            Icon(
+                                              Icons.search,
+                                              size: 30,
+                                              color: Colors.black54,
+                                            ),
+                                            SizedBox(
+                                              width: 5,
+                                            ),
+                                            Center(
+                                              child: Container(
+                                                height: 80,
+                                                width: deviceInfo.width * 0.7,
+                                                child: TextFormField(
+                                                  decoration: InputDecoration(
+                                                      border: InputBorder.none,
+                                                      hintText: 'Search somthing'),
+                                                ),
+                                              ),
+                                            )
+                                          ],
                                         ),
                                       ),
-                                    )
-                                  ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 30,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 15),
-                          child: Row(
-                            children: <Widget>[
-                              Text(
-                                'Featured',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 25,
-                                    color: Colors.black54),
-                              ),
-                              Spacer(),
-                              InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => FeaturedPage(
-                                              datadata: data_list,
-                                              type: 'Featured',
-                                              onAddToCart: dataReceiver())));
-                                },
-                                child: Text(
-                                  'See all',
-                                  style: TextStyle(
-                                      fontSize: 18, color: Colors.black54),
+                                SizedBox(
+                                  height: 30,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 15),
-                          child: Container(
-                            width: deviceInfo.width,
-                            height: 270,
-                            //color: Colors.black,
-                            child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children:
-                                    List.generate(data_list.length, (index) {
-                                  return FeaturedCard(
-                                      datadata: data_list[index],
-                                      onAddToCart: dataReceiver());
-                                })),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 30,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 15),
-                          child: Row(
-                            children: <Widget>[
-                              Text(
-                                'Categories',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 25,
-                                    color: Colors.black54),
-                              ),
-                              Spacer(),
-                              InkWell(
-                                onTap: () {},
-                                child: Text(
-                                  'See all',
-                                  style: TextStyle(
-                                      fontSize: 18, color: Colors.black54),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, right: 15),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        'Featured',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 25,
+                                            color: Colors.black54),
+                                      ),
+                                      Spacer(),
+                                      InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      FeaturedPage(
+                                                          datadata: data_list,
+                                                          type: 'Featured',
+                                                          onAddToCart: dataReceiver())));
+                                        },
+                                        child: Text(
+                                          'See all',
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.black54),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: Container(
-                            width: deviceInfo.width,
-                            height: 100,
-                            //color: Colors.black,
-                            child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children: List.generate(10, (index) {
-                                  return CategoryList();
-                                })),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 30,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 15),
-                          child: Row(
-                            children: <Widget>[
-                              Text(
-                                'New Arrival',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 25,
-                                    color: Colors.black54),
-                              ),
-                              Spacer(),
-                              InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => FeaturedPage(
-                                              datadata: data_list,
-                                              type: 'New Arrival',
-                                              onAddToCart: dataReceiver())));
-                                },
-                                child: Text(
-                                  'See all',
-                                  style: TextStyle(
-                                      fontSize: 18, color: Colors.black54),
+                                SizedBox(
+                                  height: 15,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          height: 15,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 15),
-                          child: Container(
-                            width: deviceInfo.width,
-                            height: 270,
-                            //color: Colors.black,
-                            child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                children:
-                                    List.generate(data_list.length, (index) {
-                                  return FeaturedCard(
-                                      datadata: data_list[index],
-                                      onAddToCart: dataReceiver());
-                                })),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 50,
-                        ),
-                      ],
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, right: 15),
+                                  child: Container(
+                                    width: deviceInfo.width,
+                                    height: 270,
+                                    //color: Colors.black,
+                                    child: ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        children:
+                                        List.generate(
+                                            data_list.length, (index) {
+                                          return FeaturedCard(
+                                              datadata: data_list[index],
+                                              onAddToCart: dataReceiver());
+                                        })),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 30,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, right: 15),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        'Categories',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 25,
+                                            color: Colors.black54),
+                                      ),
+                                      Spacer(),
+                                      InkWell(
+                                        onTap: () {},
+                                        child: Text(
+                                          'See all',
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.black54),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 15,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10),
+                                  child: Container(
+                                    width: deviceInfo.width,
+                                    height: 100,
+                                    //color: Colors.black,
+                                    child: ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        children: List.generate(10, (index) {
+                                          return CategoryList();
+                                        })),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 30,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, right: 15),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        'New Arrival',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 25,
+                                            color: Colors.black54),
+                                      ),
+                                      Spacer(),
+                                      InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      FeaturedPage(
+                                                          datadata: data_list,
+                                                          type: 'New Arrival',
+                                                          onAddToCart: dataReceiver())));
+                                        },
+                                        child: Text(
+                                          'See all',
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              color: Colors.black54),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 15,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      left: 10, right: 15),
+                                  child: Container(
+                                    width: deviceInfo.width,
+                                    height: 270,
+                                    //color: Colors.black,
+                                    child: ListView(
+                                        scrollDirection: Axis.horizontal,
+                                        children:
+                                        List.generate(
+                                            data_list.length, (index) {
+                                          return FeaturedCard(
+                                              datadata: data_list[index],
+                                              onAddToCart: dataReceiver());
+                                        })),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 50,
+                                ),
+                              ],
+                            );
+                          }
+                          else
+                            return CircularProgressIndicator();
+                          }
                     ),
                   ),
                 ),
@@ -400,4 +434,10 @@ class _HomePageState extends State<HomePage> {
         ),
       );
   }
+
+
+
+
+
 }
+

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shopping_ui/cart_page.dart';
+import 'package:shopping_ui/bloc_controller.dart';
 
 import 'data_json.dart';
 
@@ -10,25 +10,27 @@ class CartCard extends StatefulWidget {
 
   @override
   _CartCardState createState() => _CartCardState();
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 class _CartCardState extends State<CartCard> {
-  int item_counter = 1;
-
-  void incrementItemCounter() {
-    setState(() {
-      item_counter++;
-    });
-  }
-
-  void decrementItemCounter() {
-    setState(() {
-      if (item_counter != 1) item_counter--;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
+    ControllerBloc bloc = ControllerBloc();
+
+
     return Container(
         height: 170,
         child: Card(
@@ -82,19 +84,30 @@ class _CartCardState extends State<CartCard> {
                         children: <Widget>[
                           IconButton(
                             onPressed: () {
-                              decrementItemCounter();
+                              bloc.decrementCounter();
                             },
                             icon: Icon(
                               Icons.remove,
                               size: 15,
                             ),
                           ),
-                          Text(item_counter.toString(),
-                              style: TextStyle(
-                                  fontSize: 20, color: Colors.black54)),
+                          StreamBuilder<Object>(
+                            initialData: 1,
+                            stream: bloc.itemCountControl,
+                            builder: (context, snapshot) {
+                             // if(snapshot.hasData) {
+                                return
+                                Text(snapshot.data.toString(),
+                                    style: TextStyle(
+                                        fontSize: 20, color: Colors.black54));
+                             // }
+//                              else Text('0',style: TextStyle(
+//                                  fontSize: 20, color: Colors.black54));
+                                }
+                          ),
                           IconButton(
                             onPressed: () {
-                              incrementItemCounter();
+                              bloc.incrementCounter();
                             },
                             icon: Icon(
                               Icons.add,

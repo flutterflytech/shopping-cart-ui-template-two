@@ -60,7 +60,7 @@ class _FeaturedPageState extends State<FeaturedPage> {
                 ),
               ),
               Container(
-                height: deviceInfo.height * 0.874,
+                height: deviceInfo.height * 0.86,
                 width: deviceInfo.width,
                 child: SingleChildScrollView(
                   child: Column(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shopping_ui/cart_card.dart';
 
@@ -5,7 +7,7 @@ import 'data_json.dart';
 
 class CartPage extends StatefulWidget {
   final List<Data> cartData;
-  final Function(Data) onRemoveFromCart;
+  final Function(List<Data>) onRemoveFromCart;
 
   const CartPage({Key key, this.cartData, this.onRemoveFromCart})
       : super(key: key);
@@ -15,7 +17,15 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  Data deletedData;
+
+  final StreamController<List> _cartItemController = StreamController<List>();
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _cartItemController.close();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,23 +135,27 @@ class _CartPageState extends State<CartPage> {
         style: TextStyle(fontSize: 30, color: Colors.black54),
       ));
     else
-      return ListView(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          scrollDirection: Axis.vertical,
-          children: List.generate(widget.cartData.length, (index) {
-            return Padding(
-              padding: const EdgeInsets.only(left: 15, right: 15, bottom: 15),
-              child: CartCard(
-                  data: widget.cartData[index],
-                  onRemoveFromCart: (Data data) {
-                    deletedData = data;
+      return StreamBuilder<List>(
+        stream: _cartItemController.stream,
+        builder: (context, snapshot) {
+          return ListView(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              scrollDirection: Axis.vertical,
+              children: List.generate(widget.cartData.length, (index) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 15, right: 15, bottom: 15),
+                  child: CartCard(
+                      data: widget.cartData[index],
+                      onRemoveFromCart: (Data data) {
+                        widget.cartData.remove(data);
+                        _cartItemController.sink.add(widget.cartData);
+                          widget.onRemoveFromCart(widget.cartData);
 
-                    setState(() {
-                      widget.onRemoveFromCart(deletedData);
-                    });
-                  }),
-            );
-          }));
+                      }),
+                );
+              }));
+        }
+      );
   }
 }
