@@ -73,7 +73,17 @@ class _HomePageState extends State<HomePage> {
               child: ListTile(
                 title: Text('Featured',
                     style: TextStyle(fontSize: 20, color: Colors.black54)),
-                onTap: () {},
+                onTap: () {
+                  closeDrawer();
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              FeaturedPage(
+                                  datadata: data_list,
+                                  type: 'Featured',
+                                  onAddToCart: dataReceiver())));
+                },
               ),
             ),
             SizedBox(
@@ -95,7 +105,21 @@ class _HomePageState extends State<HomePage> {
               child: ListTile(
                 title: Text('New Arrival',
                     style: TextStyle(fontSize: 20, color: Colors.black54)),
-                onTap: () {},
+                onTap: () {
+                  closeDrawer();
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              FeaturedPage(
+                                  datadata: data_list,
+                                  type: 'New Arrival',
+                                  onAddToCart: dataReceiver())));
+
+
+
+
+                },
               ),
             ),
           ],
@@ -433,9 +457,12 @@ class _HomePageState extends State<HomePage> {
           child: Center(child: Text(cart_data.length.toString())),
         ),
       );
+
   }
 
-
+  closeDrawer(){
+    Navigator.pop(context);
+  }
 
 
 
